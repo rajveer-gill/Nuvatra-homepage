@@ -31,32 +31,59 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Contact Form Submission
+// Initialize EmailJS with public key from config
+if (typeof emailjs !== 'undefined' && typeof EMAILJS_CONFIG !== 'undefined') {
+    emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
+}
+
+// Contact Form Submission with EmailJS
 const contactForm = document.getElementById('contactForm');
 if (contactForm) {
     contactForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        
+        const submitButton = contactForm.querySelector('.submit-button');
+        const originalText = submitButton.textContent;
         
         // Get form data
         const name = contactForm.querySelector('input[type="text"]').value;
         const email = contactForm.querySelector('input[type="email"]').value;
         const message = contactForm.querySelector('textarea').value;
         
-        // Create mailto link with subject and body
-        const subject = encodeURIComponent(`Contact from ${name} - Nuvatra Website`);
-        const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`);
-        const mailtoLink = `mailto:info@nuvatrahq.com?subject=${subject}&body=${body}`;
-        
-        // Open email client
-        window.location.href = mailtoLink;
-        
-        // Show confirmation
-        setTimeout(() => {
-            alert(`Thank you, ${name}! Your email client should have opened. If not, please email us directly at info@nuvatrahq.com`);
-        }, 500);
-        
-        // Reset form
-        contactForm.reset();
+        // Check if EmailJS is configured
+        if (typeof emailjs !== 'undefined' && typeof EMAILJS_CONFIG !== 'undefined' && EMAILJS_CONFIG.SERVICE_ID && EMAILJS_CONFIG.TEMPLATE_ID) {
+            // Use EmailJS to send email automatically
+            submitButton.textContent = 'Sending...';
+            submitButton.disabled = true;
+            
+            emailjs.send(EMAILJS_CONFIG.SERVICE_ID, EMAILJS_CONFIG.TEMPLATE_ID, {
+                from_name: name,
+                from_email: email,
+                message: message,
+                reply_to: email
+            })
+            .then(() => {
+                alert(`Thank you, ${name}! Your message has been sent successfully. We'll get back to you at ${email} soon.`);
+                contactForm.reset();
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            }, (error) => {
+                console.error('EmailJS Error:', error);
+                alert('Sorry, there was an error sending your message. Please try again or email us directly at info@nuvatrahq.com');
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            });
+        } else {
+            // Fallback to mailto: if EmailJS not configured
+            const subject = encodeURIComponent(`Contact from ${name} - Nuvatra Website`);
+            const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`);
+            window.location.href = `mailto:info@nuvatrahq.com?subject=${subject}&body=${body}`;
+            
+            setTimeout(() => {
+                alert(`Thank you, ${name}! Your email client should have opened. If not, please email us directly at info@nuvatrahq.com`);
+                contactForm.reset();
+            }, 500);
+        }
     });
 }
 
