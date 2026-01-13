@@ -56,10 +56,17 @@ if (contactForm) {
             submitButton.textContent = 'Sending...';
             submitButton.disabled = true;
             
+            // Get current date/time
+            const time = new Date().toLocaleString('en-US', {
+                dateStyle: 'full',
+                timeStyle: 'long'
+            });
+            
             emailjs.send(EMAILJS_CONFIG.SERVICE_ID, EMAILJS_CONFIG.TEMPLATE_ID, {
-                from_name: name,
-                from_email: email,
+                name: name,
+                email: email,
                 message: message,
+                time: time,
                 reply_to: email
             })
             .then(() => {
